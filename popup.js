@@ -24,7 +24,7 @@ function loadPrivat () {
         var usd = "not found";
         for (var i = data.length - 1; i >= 0; i--) {
             if (data[i].ccy === 'USD'){
-                usd = data[i].sale;
+                usd = data[i].buy;
             }
         }
         if (usd === "not found"){
@@ -46,7 +46,7 @@ function loadMono () {
         var monousd = "not found";
         for (var i = data.length - 1; i >= 0; i--) {
             if (data[i].currencyCodeB === 980){
-                monousd = data[i].rateSell;
+                monousd = data[i].rateBuy;
             }
         }
         if (monousd === "not found") {
@@ -81,7 +81,7 @@ function loadAlfa() {
         } else {
             return;
         }
-        usdBlock = usdBlock.substring(usdBlock.indexOf("Продаж"));
+        usdBlock = usdBlock.substring(usdBlock.indexOf("Купівля"));
         re.lastIndex = 0;
         re = new RegExp('\t{6}(.*?)\t{5}');
         var usd = usdBlock.match(re);
@@ -106,8 +106,8 @@ function loadKurscomua () {
         if (data && data.view) {
             var chart = JSON.parse(data.view);
             console.log(chart);
-            var todayData = chart.series[0].data;
-            var yesterdayData = chart.series[2].data;
+            var todayData = chart.series[1].data;
+            var yesterdayData = chart.series[3].data;
             var kursRate = getLatestRate(todayData);
             if (kursRate === null) {
                 kursRate = getLatestRate(yesterdayData);
