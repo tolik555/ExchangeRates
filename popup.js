@@ -89,8 +89,8 @@ function loadAlfa() {
         method: 'GET',
         url: 'https://alfabank.ua/',
         data: ''
-    }, data => {
-        data = data.replace((/  |\r\n|\n|\r/gm),"");
+    }, function (data) {
+        data = data.replace((/  |\r\n|\n|\r/gm), "");
         var re = new RegExp('\<div class=\"currency-tab-block" data-tab="0"\>(.*?)\<div class=\"currency-tab-block\" data-tab=\"2\"\>');
         var allCurrenciesBlock = data.match(re);
         if (allCurrenciesBlock && allCurrenciesBlock && allCurrenciesBlock.length > 0) {
@@ -99,17 +99,28 @@ function loadAlfa() {
             return;
         }
         re.lastIndex = 0;
-        re = new RegExp('\<div class=\"title\"\>USD\<\/div\>(.*?)\<span class=\"small-title\"\>(.*?)\<div class=\"currency-block\"\>');
+        re = new RegExp('\<div class=\"title\"\>USD/UAH\<\/div\>(.*?)\<span class=\"small-title\"\>(.*?)\<div class=\"currency-block\"\>');
         var usdBlock = allCurrenciesBlock.match(re);
         if (usdBlock && usdBlock.length && usdBlock.length > 0) {
             usdBlock = usdBlock[0];
         } else {
             return;
         }
+        // console.log(
+        //     usdBlock
+        // );
         usdBlock = usdBlock.substring(usdBlock.indexOf("Купівля"));
+
+        console.log(
+            usdBlock
+        );
         re.lastIndex = 0;
-        re = new RegExp('\t{6}(.*?)\t{5}');
+        // re = new RegExp('\t{6}(.*?)\t{5}');
+        re = new RegExp('\</span\>\<span class=\"rate-number\"\>(.*?)\t{5}');
         var usd = usdBlock.match(re);
+        console.log(
+            usdBlock
+        );
         if (usd && usd.length && usd.length > 1) {
             usd = usd[1];
         } else {
@@ -128,11 +139,11 @@ function loadKurscomua () {
         method: 'GET',
         url: 'https://kurs.com.ua/ajax/getChart?size=big&type=interbank&currencies_from=usd&currencies_to=&organizations=&limit=&optimal=',
         data: ''
-    }, data => {
+    }, function(data) {
         data = JSON.parse(data);
         if (data && data.view) {
             var chart = JSON.parse(data.view);
-            console.log(chart);
+            // console.log(chart);
             var todayData = chart.series[1].data;
             var yesterdayData = chart.series[3].data;
             var kursRate = getLatestRate(todayData);
@@ -191,7 +202,7 @@ function drawChanges(elementId, newRate) {
 }
 
 function getLatestRate(data) {
-    console.log(data);
+    // console.log(data);
     if (data.length > 0) {
         var i = data.length - 1;
         do {
