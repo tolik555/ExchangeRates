@@ -1,4 +1,4 @@
-window.addEventListener('load', function (evt) {
+window.addEventListener('load', function(evt) {
     init();
 });
 
@@ -7,53 +7,76 @@ var isMonoEnabled = true;
 var isAlfaEnabled = true;
 var idKurscomuaEnabled = true;
 
-function init (message) {
+function doCORSRequest(options, callback) {
+    var cors_api_url = 'https://cors-anywhere.herokuapp.com/';
+    var x = new XMLHttpRequest();
+    x.open(options.method, cors_api_url + options.url);
+    x.onload = x.onerror = function() {
+        callback(
+            x.responseText
+        );
+    };
+    if (/^POST/i.test(options.method)) {
+        x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    }
+    x.send(options.data);
+}
+
+function setElementText(elementId, text) {
+    var element = document.getElementById(elementId);
+    if (!element) return;
+    element.innerHTML = text;
+}
+
+function init(message) {
     loadPrivat();
     loadMono();
     loadAlfa();
     loadKurscomua();
 }
 
-function loadPrivat () {
+function loadPrivat() {
     if (!isPrivatEnabled) {
         return;
     }
     fetch('https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=11')
-    .then(response => response.json())
-    .then(data => {
-        var usd = "not found";
-        for (var i = data.length - 1; i >= 0; i--) {
-            if (data[i].ccy === 'USD'){
-                usd = data[i].buy;
+        .then(response => response.json())
+        .then(data => {
+            var usd = "not found";
+            for (var i = data.length - 1; i >= 0; i--) {
+                if (data[i].ccy === 'USD'){
+                    usd = data[i].buy;
+                }
             }
-        }
+
         if (usd === "not found"){
-            document.getElementById('privatbank').innerHTML = usd;
+            setElementText('privatbank', usd);
         } else {
             drawChanges("privatbankchange", usd);
-            document.getElementById('privatbank').innerHTML = (+usd).toFixed(3);
+            setElementText('privatbank', (+usd).toFixed(3));
         }
     });
 }
 
-function loadMono () {
+function loadMono() {
     if (!isMonoEnabled) {
         return;
     }
     fetch('https://api.monobank.ua/bank/currency')
-    .then(response => response.json())
-    .then(data => {
-        var monousd = "not found";
-        for (var i = data.length - 1; i >= 0; i--) {
-            if (data[i].currencyCodeB === 980){
-                monousd = data[i].rateBuy;
+        .then(response => response.json())
+        .then(data => {
+            var monousd = "not found";
+            for (var i = data.length - 1; i >= 0; i--) {
+                if (data[i].currencyCodeB === 980){
+                    monousd = data[i].rateBuy;
+                }
             }
-        }
+
         if (monousd === "not found") {
-            document.getElementById('monobank').innerHTML = monousd;
+            setElementText('monobank', monousd);
         } else {
             drawChanges("monobankchange", monousd);
-            document.getElementById('monobank').innerHTML = (+monousd).toFixed(3);
+            setElementText('monobank', (+monousd).toFixed(3));
         }
     });
 }
@@ -62,9 +85,11 @@ function loadAlfa() {
     if (!isAlfaEnabled) {
         return;
     }
-    fetch('https://alfabank.ua/')
-    .then(response => response.text())
-    .then(data => {
+    doCORSRequest({
+        method: 'GET',
+        url: 'https://alfabank.ua/',
+        data: ''
+    }, data => {
         data = data.replace((/  |\r\n|\n|\r/gm),"");
         var re = new RegExp('\<div class=\"currency-tab-block" data-tab="0"\>(.*?)\<div class=\"currency-tab-block\" data-tab=\"2\"\>');
         var allCurrenciesBlock = data.match(re);
@@ -91,7 +116,7 @@ function loadAlfa() {
             return;
         }
         drawChanges("alfabankchange", usd);
-        document.getElementById('alfabank').innerHTML = (+usd).toFixed(3);
+        setElementText('alfabank', (+usd).toFixed(3));
     });
 }
 
@@ -99,10 +124,12 @@ function loadKurscomua () {
     if (!idKurscomuaEnabled) {
         return;
     }
-    fetch('https://kurs.com.ua/ajax/getChart?size=big&type=interbank&currencies_from=usd&currencies_to=&organizations=&limit=&optimal=', {
-    })
-    .then(response => response.json())
-    .then(data => {
+    doCORSRequest({
+        method: 'GET',
+        url: 'https://kurs.com.ua/ajax/getChart?size=big&type=interbank&currencies_from=usd&currencies_to=&organizations=&limit=&optimal=',
+        data: ''
+    }, data => {
+        data = JSON.parse(data);
         if (data && data.view) {
             var chart = JSON.parse(data.view);
             console.log(chart);
@@ -111,14 +138,18 @@ function loadKurscomua () {
             var kursRate = getLatestRate(todayData);
             if (kursRate === null) {
                 kursRate = getLatestRate(yesterdayData);
-                document.getElementById('kurscomua').style.color = "grey";
-                document.getElementById('kurscomuachange').style.color = "grey";
+                var el1 = document.getElementById('kurscomua');
+                var el2 = document.getElementById('kurscomuachange');
+                if (el1 && el2) {
+                    el1.style.color = "grey";
+                    el2.style.color = "grey";
+                }
             }
             if (kursRate === null) {
                 return;
             }
             drawChanges("kurscomuachange", kursRate);
-            document.getElementById('kurscomua').innerHTML = (+kursRate).toFixed(3);
+            setElementText("kurscomua", (+kursRate).toFixed(3));
         }
     });
 }
@@ -142,6 +173,7 @@ function drawChanges(elementId, newRate) {
         storage.setItem(currentKey, currentRate);
         storage.setItem(previousKey, previousRate);
     }
+    if (!element) return;
     var text = (newRate - previousRate).toFixed(3);
     element.innerHTML = text;
     if (currentRate < previousRate) {
